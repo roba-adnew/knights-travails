@@ -78,7 +78,7 @@ function hasNotBeenVisited(point, path) {
     return true;
 }
 
-function buildMovesArray(startPoint, endPoint) {
+function knightTravails(startPoint, endPoint) {
 
     if (startPoint === endPoint) {
         return [];
@@ -127,10 +127,3 @@ function buildMovesArray(startPoint, endPoint) {
 
     return shortestPath;
 }
-
-function knightMoves(startPoint, endPoint) {
-
-    
-}
-
-console.log(buildMovesArray([0,0],[7,7]));
