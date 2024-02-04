@@ -1,102 +1,139 @@
-DIM_MIN = 0;
-DIM_MAX = 7;
-
 function spaceNode(coord) {
-    function createKnightJumps() {
-        const jumps1 = [-1,1];
-        const jumps2 = [-2,2];
-        const jumps = [];
-    
-        for (let x = 0; x < jumps1.length; x++) {
-            for (let y = 0; y < jumps2.length; y++) {
-                jumps.push([jumps1[x], jumps2[y]]);
-                jumps.push([jumps2[y], jumps1[x]]);
-            }
-        }
-    
-        return jumps;
-    }
-  
-    function isOnBoard(coord) {
-        const isValidX = coord[0] >= DIM_MIN && coord[0]<= DIM_MAX; 
-        const isValidY = coord[1] >= DIM_MIN && coord[1]<= DIM_MAX; 
-    
-        return isValidX && isValidY;
-    }
+    const DIM_MIN = 0;
+    const DIM_MAX = 7;
+
+    const jumps = [
+        [ -1, -2 ], [ -2, -1 ],
+        [ -1, 2 ],  [ 2, -1 ],
+        [ 1, -2 ],  [ -2, 1 ],
+        [ 1, 2 ],   [ 2, 1 ]
+      ];
+
 
     function moveKnight(coord, jump) {
         const newPosX = coord[0] + jump[0];
         const newPosY = coord[1] + jump[1];
+
+        const isValidX = newPosX >= DIM_MIN && newPosX <= DIM_MAX; 
+        const isValidY = newPosY >= DIM_MIN && newPosY <= DIM_MAX; 
+        
+        const newPos = isValidX && isValidY ? [newPosX, newPosY] : null;
+        return newPos;
+    }
     
-        const newPos = [newPosX, newPosY];
-        if (isOnBoard(newPos)) {
-            return newPos;
-        }
-    
-        return false;
+
+    function createMoves() {
+        const moves = [];
+        for (let i = 0; i < jumps.length; i++) {
+            const newPos = moveKnight(coord, jumps[i]);
+            moves.push(newPos);
+            }
+        
+        return moves
     }
 
-    const jumps = createKnightJumps();
-    const moves = []
-
-    for (let i = 0; i < jumps.length; i++) {
-        const newPos = moveKnight(coord, jumps[i]);
-        if (newPos) {
-            moves.push(newPos)
-        }
-        else {
-            moves.push(null);
-        }
-    }
+    const moves = createMoves();
 
     return { coord, moves }
-}
+    }
+    
 
 function knightMovesBoard() {
 
-    function createBoard() {
-        const spaces = [];
-        for (let i = 0; i <= DIM_MAX; i++) {
-            for (let j = 0; j <= DIM_MAX; j++) {
-                spaces.push(spaceNode([i,j]))
-            }
-        }
-        return spaces;
-    }
-
     const board = createBoard();
+    const startingSpace = createGraph();
+
+    function coordsMatch(coord1, coord2) {
+        const xMatches = coord1[0] == coord2[0];
+        const yMatches = coord1[1] == coord2[1];
+        return xMatches & yMatches
+    }
 
     function getSpaceNode(coord) {
         for (let i = 0; i < board.length; i++) {
             const currSpace = board[i];
-            const corrX = currSpace.coord[0] == coord[0];
-            const corrY = currSpace.coord[1] == coord[1];
-            if (corrX && corrY) {
+            if (coordsMatch(currSpace.coord, coord)) {
                 return currSpace
             }
         }
 
         throw new Error("You dun fucked up son");  
     }
+
+    function createBoard () {
+        const DIM_MAX = 7;
+        const board = [];
+        for (let i = 0; i <= DIM_MAX; i++) {
+            for (let j = 0; j <= DIM_MAX; j++) {
+                board.push(spaceNode([i,j]))
+            }
+        }
+
+        return board;
+    }
     
     function createGraph() {
         for (let i = 0; i < board.length; i++) {
-            const currSpace = board[i];
-            const check = currSpace.moves[0];
-            for (let j = 0; j < currSpace.moves.length; j++) {
-                if (currSpace.moves[j]) {
-                    currSpace.moves[j] = getSpaceNode(currSpace.moves[j])
+            for (let j = 0; j < board[i].moves.length; j++) {
+                if (board[i].moves[j]) {
+                    const nextSpaceCoord = board[i].moves[j];
+                    const nextSpaceNode = getSpaceNode(nextSpaceCoord);
+                    board[i].moves[j] = nextSpaceNode;
                 }
             }
         }
 
-        return getSpaceNode[0,0];
+        return getSpaceNode([0,0]);
     }
-    const startingSpace = createGraph();
 
-    return { get board() { return board }, get start() { return startingSpace } } 
-}
+    function hasBeenVisited(space, path) {
+        for (let i = 0; i < path.length; i++) {
+            if (coordsMatch(space, path[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    function knightMoves(currSpace = startingSpace, endSpace, path = []) {
+        if (hasBeenVisited(currSpace, path) || path.length >= 12) {
+            return null;
+        }
 
-a = knightMovesBoard();
-a.start;
+        if (coordsMatch(currSpace, endSpace)) {
+            path.push(endSpace)
+            return path;
+        }
+
+        path.push(currSpace);
+
+        const currNode = getSpaceNode(currSpace);
+        const possPaths = [];
+        for (let i = 0; i < currNode.moves.length; i++) {
+            if (currNode.moves[i]) {
+                possPaths.push([...path]);
+
+                const nextSpace = currNode.moves[i].coord;
+                const pathCont = knightMoves(nextSpace, endSpace, possPaths[possPaths.length - 1]);
+                if (pathCont) {
+                    possPaths[possPaths.length - 1] = pathCont;
+                }
+                else {
+                    possPaths.pop();
+                }
+            }
+        }
+
+        const shortestPath = possPaths.reduce((shortestPath, path) => {
+            return path.length < shortestPath.length ? path : shortestPath
+        }, possPaths[0]);
+
+        return shortestPath;
+    }
+    
+
+    return { get board() { return board }, 
+             get start() { return startingSpace },
+             knightMoves
+           } 
+};
