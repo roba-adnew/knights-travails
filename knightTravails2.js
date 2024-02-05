@@ -86,15 +86,6 @@ function knightMovesBoard() {
         return getSpaceNode([0,0]);
     }
 
-    function hasBeenVisited(space, path) {
-        for (let i = 0; i < path.length; i++) {
-            if (coordsMatch(space, path[i])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     function knightMoves(currSpace, endSpace) {
         if (coordsMatch(currSpace, endSpace)) {
             return endSpace;
