@@ -95,40 +95,37 @@ function knightMovesBoard() {
         return false;
     }
 
-    function knightMoves(currSpace = startingSpace, endSpace, path = []) {
-        if (hasBeenVisited(currSpace, path) || path.length >= 12) {
-            return null;
-        }
-
+    function knightMoves(currSpace, endSpace) {
         if (coordsMatch(currSpace, endSpace)) {
-            path.push(endSpace)
-            return path;
-        }
+            return endSpace;
+        }  
 
-        path.push(currSpace);
+        const paths = [[currSpace]];
+        let shortestPath;
 
-        const currNode = getSpaceNode(currSpace);
-        const possPaths = [];
-        for (let i = 0; i < currNode.moves.length; i++) {
-            if (currNode.moves[i]) {
-                possPaths.push([...path]);
+        
+        for (let i = 0; i < paths.length; i++) {
+            const currPath = [...paths[i]];
+            const currSpace = currPath[currPath.length - 1];
+            const currNode = getSpaceNode(currSpace);
 
-                const nextSpace = currNode.moves[i].coord;
-                const pathCont = knightMoves(nextSpace, endSpace, possPaths[possPaths.length - 1]);
-                if (pathCont) {
-                    possPaths[possPaths.length - 1] = pathCont;
-                }
-                else {
-                    possPaths.pop();
+            for (let i = 0; i < currNode.moves.length; i++) {
+                if (currNode.moves[i]) {
+                    const currPathCopy = [...currPath];
+                    const nextSpace = currNode.moves[i].coord;
+                    currPathCopy.push(nextSpace);
+                    if (coordsMatch(nextSpace, endSpace)) {
+                        shortestPath = currPathCopy;
+                        return shortestPath;
+                    }
+                    else {
+                        paths.push(currPathCopy);
+                    }
                 }
             }
         }
 
-        const shortestPath = possPaths.reduce((shortestPath, path) => {
-            return path.length < shortestPath.length ? path : shortestPath
-        }, possPaths[0]);
-
-        return shortestPath;
+        return false;
     }
     
 
