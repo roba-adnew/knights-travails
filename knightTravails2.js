@@ -23,11 +23,11 @@ function spaceNode(coord) {
     
 
     function createMoves() {
-        const moves = [];
+        const moves = {};
         for (let i = 0; i < jumps.length; i++) {
             const newPos = moveKnight(coord, jumps[i]);
             if (newPos) { 
-                moves.push(newPos) 
+                moves[newPos] = null;
             }
         }
         
@@ -48,41 +48,51 @@ function knightMovesBoard() {
         return xMatches & yMatches
     }
 
-    function createBoard () {
+
+    // function findSpaceNode(currNode, coord) {
+    //     const toSearch = [currNode];
+    //     const searched = new Set();
+
+    //     do {
+    //         if (searched.has(toSearch[0]) || !toSearch[0].coord) {
+    //             toSearch.shift();
+    //             continue;
+    //         }
+
+    //         if (coordsMatch(toSearch[0].coord, coord)) {
+    //             return toSearch[0];
+    //         }
+
+    //         for (let i = 0; i < toSearch[0].moves.length ; i++) {
+    //             const nextNode = toSearch[0].moves[i];
+    //             toSearch.push(nextNode);
+    //         }
+    //         searched.add(toSearch.shift());
+            
+    //     }
+    //     while (toSearch[0]);
+
+    //     return null; 
+    // }
+    
+    function createBoardGraph() {
         const DIM_MAX = 7;
-        const board = [];
+        const board = {}
         for (let i = 0; i <= DIM_MAX; i++) {
             for (let j = 0; j <= DIM_MAX; j++) {
-                board.push(spaceNode([i,j]))
-            }
-        }
+                if (!board[[i,j]]) board[[i,j]] = spaceNode([i,j]);
 
-        return board;
-    }
-
-    function getSpaceNode(coord) {
-        for (let i = 0; i < board.length; i++) {
-            const currSpace = board[i];
-            if (coordsMatch(currSpace.coord, coord)) {
-                return currSpace
-            }
-        }
-
-        throw new Error("You dun fucked up son");  
-    }
-    
-    function createGraph() {
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].moves.length; j++) {
-                if (board[i].moves[j]) {
-                    const nextSpaceCoord = board[i].moves[j];
-                    const nextSpaceNode = getSpaceNode(nextSpaceCoord);
-                    board[i].moves[j] = nextSpaceNode;
+                for (let [a,x,b] in board[[i,j]].moves) {
+                    a = parseInt(a);
+                    b = parseInt(b);
+                    if (!board[[a,b]]) board[[a,b]] = spaceNode([a,b]);
+                    board[[i,j]].moves[[a,b]] = spaceNode([a,b]);
+                    board[[a,b]].moves[[i,j]] = board[[i,j]];
                 }
             }
         }
 
-        return getSpaceNode([0,0]);
+        return board;
     }
 
     function knightMoves(currSpace, endSpace) {
@@ -95,24 +105,25 @@ function knightMovesBoard() {
         const visitedSpaces = new Set();
 
         do {
-            const currPath = [...paths[0]];
-            const currSpace = currPath[currPath.length - 1];
-            const currNode = getSpaceNode(currSpace);
+            const thisPath = [...paths[0]];
+            const thisSpace = thisPath[thisPath.length - 1];
+            const thisNode = board[ [thisSpace[0], thisSpace[1]] ];
 
-            for (let j = 0; j < currNode.moves.length; j++) { 
-                const currPathCopy = [...currPath];
-                const nextSpace = currNode.moves[j].coord;
-                currPathCopy.push(nextSpace);
-                if (coordsMatch(nextSpace, endSpace)) {
-                    shortestPath = [...currPathCopy];
+            for (let [a,x,b] in thisNode.moves) { 
+                a = parseInt(a);
+                b = parseInt(b);
+                const thisPathCopy = [...thisPath];
+                thisPathCopy.push([a,b]);
+                if (coordsMatch([a,b], endSpace)) {
+                    shortestPath = [...thisPathCopy];
                     return shortestPath;
                 } 
                 else if (visitedSpaces.has(endSpace)) {
                     continue;
                 }
                 else {
-                    paths.push(currPathCopy);
-                    visitedSpaces.add(nextSpace);
+                    paths.push(thisPathCopy);
+                    visitedSpaces.add([a,b]);
                 }
             }
             paths.shift();
@@ -122,12 +133,10 @@ function knightMovesBoard() {
         return false;
     }
 
-    const board = createBoard();
-    const startingSpace = createGraph();
+    const board = createBoardGraph();
     
 
     return { get board() { return board }, 
-             get start() { return startingSpace },
              knightMoves
            } 
 };
